@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let allActivities = {};
   let currentFilter = "all";
   let searchQuery = "";
-  let sharedActivityName = "";
+  let sharedActivityId = "";
   let currentDay = "";
   let currentTimeRange = "";
 
@@ -307,12 +307,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function buildActivityShareUrl(activityName) {
     const shareUrl = new URL(window.location.pathname, window.location.origin);
-    shareUrl.searchParams.set("activity", activityName);
+    shareUrl.searchParams.set("activity", buildActivityShareId(activityName));
     return shareUrl.toString();
   }
 
   function buildActivityShareText(activityName, details) {
     return `Check out ${activityName} at Mergington High School. ${details.description} Schedule: ${formatSchedule(details)}.`;
+  }
+
+  function normalizeActivityValue(value) {
+    return value.trim().toLowerCase().replace(/\s+/g, " ");
+  }
+
+  function hashActivityValue(value) {
+    let hash = 0;
+
+    for (const character of value) {
+      hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+    }
+
+    return hash.toString(36);
+  }
+
+  function buildActivityShareId(activityName) {
+    const normalizedName = normalizeActivityValue(activityName);
+    const slug =
+      normalizedName.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ||
+      "activity";
+
+    return `${slug}-${hashActivityValue(normalizedName)}`;
   }
 
   async function copyTextToClipboard(text) {
@@ -376,21 +399,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateSearchQuery(value) {
     searchQuery = value;
-    sharedActivityName = "";
+    sharedActivityId = "";
     displayFilteredActivities();
   }
 
   function initializeSharedActivityFilter() {
-    sharedActivityName =
+    sharedActivityId =
       new URLSearchParams(window.location.search).get("activity") || "";
+  }
 
-    if (!sharedActivityName) {
+  function applySharedActivitySelection() {
+    if (!sharedActivityId) {
       return;
     }
 
-    searchQuery = sharedActivityName;
-    searchInput.value = sharedActivityName;
-    displayFilteredActivities();
+    const matchingActivityName = Object.keys(allActivities).find(
+      (activityName) => buildActivityShareId(activityName) === sharedActivityId
+    );
+
+    if (!matchingActivityName) {
+      return;
+    }
+
+    searchQuery = matchingActivityName;
+    searchInput.value = matchingActivityName;
   }
 
   // Function to determine activity type (this would ideally come from backend)
@@ -488,6 +520,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Save the activities data
       allActivities = activities;
+      applySharedActivitySelection();
 
       // Apply search and filter, and handle weekend filter in client
       displayFilteredActivities();
@@ -507,7 +540,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let filteredActivities = {};
 
     Object.entries(allActivities).forEach(([name, details]) => {
-      if (sharedActivityName && name !== sharedActivityName) {
+      if (
+        sharedActivityId &&
+        buildActivityShareId(name) !== sharedActivityId
+      ) {
         return;
       }
 

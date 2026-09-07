@@ -212,6 +212,11 @@ section h3 {
   background-color: var(--border-light);
 }
 
+.share-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .share-button-primary {
   background-color: var(--primary);
   color: var(--primary-text);
@@ -220,6 +225,10 @@ section h3 {
 
 .share-button-primary:hover {
   background-color: var(--primary-light);
+}
+
+.share-button-primary:focus-visible {
+  outline-color: var(--secondary);
 }
 
 /* Activity Tag */
