@@ -43,6 +43,27 @@ class InitialActivitiesTest(unittest.TestCase):
         self.assertEqual(activity["max_participants"], 15)
         self.assertEqual(activity["participants"], [])
 
+    def test_difficulty_is_optional_and_uses_supported_values(self):
+        activities = load_initial_activities()
+        allowed_levels = {"Beginner", "Intermediate", "Advanced"}
+
+        activities_with_difficulty = [
+            details
+            for details in activities.values()
+            if "difficulty" in details
+        ]
+        activities_without_difficulty = [
+            details
+            for details in activities.values()
+            if "difficulty" not in details
+        ]
+
+        self.assertGreater(len(activities_with_difficulty), 0)
+        self.assertGreater(len(activities_without_difficulty), 0)
+
+        for activity in activities_with_difficulty:
+            self.assertIn(activity["difficulty"], allowed_levels)
+
 
 if __name__ == "__main__":
     unittest.main()
