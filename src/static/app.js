@@ -37,7 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // State for activities and filters
   let allActivities = {};
   let currentFilter = "all";
-  let searchQuery = "";
+  let searchQuery =
+    new URLSearchParams(window.location.search).get("activity") || "";
   let currentDay = "";
   let currentTimeRange = "";
 
@@ -304,6 +305,71 @@ document.addEventListener("DOMContentLoaded", () => {
     return details.schedule;
   }
 
+  function buildActivityShareUrl(activityName) {
+    const shareUrl = new URL(window.location.pathname, window.location.origin);
+    shareUrl.searchParams.set("activity", activityName);
+    return shareUrl.toString();
+  }
+
+  function buildActivityShareText(activityName, details) {
+    return `Check out ${activityName} at Mergington High School. ${details.description} Schedule: ${formatSchedule(details)}.`;
+  }
+
+  async function copyTextToClipboard(text) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const fallbackTextArea = document.createElement("textarea");
+    fallbackTextArea.value = text;
+    fallbackTextArea.setAttribute("readonly", "");
+    fallbackTextArea.style.position = "absolute";
+    fallbackTextArea.style.left = "-9999px";
+    document.body.appendChild(fallbackTextArea);
+    fallbackTextArea.select();
+    document.execCommand("copy");
+    document.body.removeChild(fallbackTextArea);
+  }
+
+  async function shareActivity(activityName, details) {
+    const shareUrl = buildActivityShareUrl(activityName);
+    const shareData = {
+      title: `${activityName} | Mergington High School`,
+      text: buildActivityShareText(activityName, details),
+      url: shareUrl,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (error) {
+        if (error.name === "AbortError") {
+          return;
+        }
+        console.error("Native sharing failed:", error);
+      }
+    }
+
+    await copyTextToClipboard(shareUrl);
+    showMessage(`Share link copied for ${activityName}.`, "success");
+  }
+
+  async function copyActivityLink(activityName) {
+    await copyTextToClipboard(buildActivityShareUrl(activityName));
+    showMessage(`Activity link copied for ${activityName}.`, "success");
+  }
+
+  function shareActivityOnWhatsApp(activityName, details) {
+    const shareMessage = `${buildActivityShareText(activityName, details)} ${buildActivityShareUrl(activityName)}`;
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(shareMessage)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  }
+
   // Function to determine activity type (this would ideally come from backend)
   function getActivityType(activityName, description) {
     const name = activityName.toLowerCase();
@@ -552,6 +618,17 @@ document.addEventListener("DOMContentLoaded", () => {
             .join("")}
         </ul>
       </div>
+      <div class="share-actions">
+        <button type="button" class="share-button share-button-primary">
+          Share
+        </button>
+        <button type="button" class="share-button">
+          Copy Link
+        </button>
+        <button type="button" class="share-button">
+          WhatsApp
+        </button>
+      </div>
       <div class="activity-card-actions">
         ${
           currentUser
@@ -570,6 +647,31 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       </div>
     `;
+
+    const [shareButton, copyLinkButton, whatsappButton] =
+    activityCard.querySelectorAll(".share-button");
+
+    shareButton.addEventListener("click", async () => {
+    try {
+      await shareActivity(name, details);
+    } catch (error) {
+      console.error("Error sharing activity:", error);
+      showMessage("Unable to share this activity right now.", "error");
+    }
+    });
+
+    copyLinkButton.addEventListener("click", async () => {
+    try {
+      await copyActivityLink(name);
+    } catch (error) {
+      console.error("Error copying activity link:", error);
+      showMessage("Unable to copy the activity link right now.", "error");
+    }
+    });
+
+    whatsappButton.addEventListener("click", () => {
+    shareActivityOnWhatsApp(name, details);
+    });
 
     // Add click handlers for delete buttons
     const deleteButtons = activityCard.querySelectorAll(".delete-participant");
@@ -862,6 +964,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Initialize app
+  searchInput.value = searchQuery;
   checkAuthentication();
   initializeFilters();
   fetchActivities();
