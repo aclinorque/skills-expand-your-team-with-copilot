@@ -32,6 +32,28 @@
   --info-light: #d1ecf1;
 }
 
+body.dark-mode {
+  --primary: #0d1321;
+  --primary-light: #1d2d44;
+  --primary-dark: #070b14;
+  --primary-text: #e6edf3;
+  --secondary: #f4a261;
+  --secondary-light: #f7b987;
+  --secondary-dark: #c97a2f;
+  --secondary-text: #111111;
+  --background: #0b111a;
+  --surface: #111827;
+  --text-primary: #e6edf3;
+  --text-secondary: #9ca3af;
+  --border: #374151;
+  --border-light: #1f2937;
+  --border-focus: #4b5563;
+  --success-light: #113d1f;
+  --warning-light: #4b3300;
+  --error-light: #4f1d24;
+  --info-light: #12303a;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -190,6 +212,47 @@ section h3 {
   justify-content: center;
 }
 
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.share-button {
+  flex: 1 1 90px;
+  background-color: var(--background);
+  color: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.share-button:hover {
+  background-color: var(--border-light);
+}
+
+.share-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.share-button-primary {
+  background-color: var(--primary);
+  color: var(--primary-text);
+  border-color: var(--primary);
+}
+
+.share-button-primary:hover {
+  background-color: var(--primary-light);
+}
+
+.share-button-primary:focus-visible {
+  outline-color: var(--secondary);
+}
+
 /* Activity Tag */
 .activity-tag {
   position: absolute;
@@ -285,6 +348,12 @@ section h3 {
   letter-spacing: 0.3px;
   text-transform: uppercase;
   border: none;
+}
+
+.register-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none;
 }
 
 button {
@@ -621,6 +690,9 @@ footer {
   position: absolute;
   top: 10px;
   right: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 #user-status {
