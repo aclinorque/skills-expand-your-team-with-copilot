@@ -22,7 +22,10 @@ def load_initial_activities():
 
 class InitialActivitiesTest(unittest.TestCase):
     def test_manga_maniacs_is_seeded(self):
-        activity = load_initial_activities()["Manga Maniacs"]
+        activities = load_initial_activities()
+
+        self.assertIn("Manga Maniacs", activities)
+        activity = activities["Manga Maniacs"]
 
         self.assertEqual(
             activity["description"],
