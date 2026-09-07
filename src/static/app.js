@@ -252,11 +252,25 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     };
 
+    const previousThemeListener = window.__themeSystemListener;
+    if (previousThemeListener) {
+      if (typeof prefersDarkThemeQuery.removeEventListener === "function") {
+        prefersDarkThemeQuery.removeEventListener(
+          "change",
+          previousThemeListener
+        );
+      } else if (typeof prefersDarkThemeQuery.removeListener === "function") {
+        prefersDarkThemeQuery.removeListener(previousThemeListener);
+      }
+    }
+
     if (typeof prefersDarkThemeQuery.addEventListener === "function") {
       prefersDarkThemeQuery.addEventListener("change", handleSystemThemeChange);
     } else if (typeof prefersDarkThemeQuery.addListener === "function") {
       prefersDarkThemeQuery.addListener(handleSystemThemeChange);
     }
+
+    window.__themeSystemListener = handleSystemThemeChange;
   }
 
   // Login function
