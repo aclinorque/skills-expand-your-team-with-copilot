@@ -1,4 +1,37 @@
-document.addEventListener("DOMContentLoaded", () => {
+function hasSpecifiedDifficulty(details) {
+  if (!Object.prototype.hasOwnProperty.call(details, "difficulty")) {
+    return false;
+  }
+
+  if (typeof details.difficulty !== "string") {
+    return Boolean(details.difficulty);
+  }
+
+  return details.difficulty.trim() !== "";
+}
+
+function matchesDifficultyFilter(details, selectedDifficulty) {
+  if (selectedDifficulty === "unspecified") {
+    return !hasSpecifiedDifficulty(details);
+  }
+
+  if (selectedDifficulty) {
+    return details.difficulty === selectedDifficulty;
+  }
+
+  return true;
+}
+
+function getNextDifficultySelection(currentDifficulty, clickedDifficulty) {
+  if (currentDifficulty === clickedDifficulty) {
+    return null;
+  }
+
+  return clickedDifficulty;
+}
+
+if (typeof document !== "undefined") {
+  document.addEventListener("DOMContentLoaded", () => {
   // DOM elements
   const activitiesList = document.getElementById("activities-list");
   const messageDiv = document.getElementById("message");
@@ -14,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const categoryFilters = document.querySelectorAll(".category-filter");
   const dayFilters = document.querySelectorAll(".day-filter");
   const timeFilters = document.querySelectorAll(".time-filter");
+  const difficultyFilters = document.querySelectorAll(".difficulty-filter");
 
   // Authentication elements
   const loginButton = document.getElementById("login-button");
@@ -44,6 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let sharedActivityId = "";
   let currentDay = "";
   let currentTimeRange = "";
+  let currentDifficulty = null;
 
   // Authentication state
   let currentUser = null;
@@ -69,6 +104,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const activeTimeFilter = document.querySelector(".time-filter.active");
     if (activeTimeFilter) {
       currentTimeRange = activeTimeFilter.dataset.time;
+    }
+
+    // Initialize difficulty filter
+    const activeDifficultyFilter = document.querySelector(
+      ".difficulty-filter.active"
+    );
+    if (activeDifficultyFilter) {
+      currentDifficulty = activeDifficultyFilter.dataset.difficulty;
     }
   }
 
@@ -699,6 +742,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
+      // Apply difficulty filter
+      if (!matchesDifficultyFilter(details, currentDifficulty)) {
+        return;
+      }
+
       // Apply search filter
       const searchableContent = [
         name.toLowerCase(),
@@ -954,6 +1002,35 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Add event listeners for difficulty filter buttons
+  difficultyFilters.forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextDifficulty = getNextDifficultySelection(
+        currentDifficulty,
+        button.dataset.difficulty
+      );
+
+      // Update active class
+      difficultyFilters.forEach((btn) => {
+        btn.classList.remove("active");
+        btn.setAttribute("aria-pressed", "false");
+      });
+
+      if (!nextDifficulty) {
+        currentDifficulty = null;
+        displayFilteredActivities();
+        return;
+      }
+
+      button.classList.add("active");
+      button.setAttribute("aria-pressed", "true");
+
+      // Update current difficulty and display filtered activities
+      currentDifficulty = nextDifficulty;
+      displayFilteredActivities();
+    });
+  });
+
   // Open registration modal
   function openRegistrationModal(activityName) {
     modalActivityName.textContent = activityName;
@@ -1180,4 +1257,12 @@ document.addEventListener("DOMContentLoaded", () => {
   checkAuthentication();
   initializeFilters();
   fetchActivities();
-});
+  });
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    matchesDifficultyFilter,
+    getNextDifficultySelection,
+  };
+}
