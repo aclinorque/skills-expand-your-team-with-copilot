@@ -38,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let allActivities = {};
   let currentFilter = "all";
   let searchQuery = "";
+  let sharedActivityName = "";
   let currentDay = "";
   let currentTimeRange = "";
 
@@ -305,7 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function buildActivityShareUrl(activityName) {
-    const shareUrl = new URL(window.location.href);
+    const shareUrl = new URL(window.location.pathname, window.location.origin);
     shareUrl.searchParams.set("activity", activityName);
     return shareUrl.toString();
   }
@@ -362,28 +363,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function shareActivityOnWhatsApp(activityName, details) {
     const shareMessage = `${buildActivityShareText(activityName, details)} ${buildActivityShareUrl(activityName)}`;
-    window.open(
+    const whatsappWindow = window.open(
       `https://wa.me/?text=${encodeURIComponent(shareMessage)}`,
       "_blank",
       "noopener,noreferrer"
     );
+
+    if (!whatsappWindow) {
+      showMessage("Unable to open WhatsApp sharing in a new tab.", "error");
+    }
   }
 
   function updateSearchQuery(value) {
     searchQuery = value;
+    sharedActivityName = "";
     displayFilteredActivities();
   }
 
   function initializeSharedActivityFilter() {
-    const sharedActivity =
+    sharedActivityName =
       new URLSearchParams(window.location.search).get("activity") || "";
 
-    if (!sharedActivity) {
+    if (!sharedActivityName) {
       return;
     }
 
-    searchInput.value = sharedActivity;
-    updateSearchQuery(sharedActivity);
+    searchQuery = sharedActivityName;
+    searchInput.value = sharedActivityName;
+    displayFilteredActivities();
   }
 
   // Function to determine activity type (this would ideally come from backend)
@@ -500,6 +507,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let filteredActivities = {};
 
     Object.entries(allActivities).forEach(([name, details]) => {
+      if (sharedActivityName && name !== sharedActivityName) {
+        return;
+      }
+
       const activityType = getActivityType(name, details.description);
 
       // Apply category filter
