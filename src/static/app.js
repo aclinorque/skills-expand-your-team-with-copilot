@@ -1,4 +1,29 @@
-document.addEventListener("DOMContentLoaded", () => {
+function hasDifficultyField(details) {
+  return Object.prototype.hasOwnProperty.call(details, "difficulty");
+}
+
+function matchesDifficultyFilter(details, selectedDifficulty) {
+  if (selectedDifficulty === "unspecified") {
+    return !hasDifficultyField(details);
+  }
+
+  if (selectedDifficulty) {
+    return details.difficulty === selectedDifficulty;
+  }
+
+  return true;
+}
+
+function getNextDifficultySelection(currentDifficulty, clickedDifficulty) {
+  if (currentDifficulty === clickedDifficulty) {
+    return null;
+  }
+
+  return clickedDifficulty;
+}
+
+if (typeof document !== "undefined") {
+  document.addEventListener("DOMContentLoaded", () => {
   // DOM elements
   const activitiesList = document.getElementById("activities-list");
   const messageDiv = document.getElementById("message");
@@ -448,14 +473,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Apply difficulty filter
-      if (currentDifficulty === "unspecified") {
-        if (details.difficulty) {
-          return;
-        }
-      } else if (currentDifficulty) {
-        if (details.difficulty !== currentDifficulty) {
-          return;
-        }
+      if (!matchesDifficultyFilter(details, currentDifficulty)) {
+        return;
       }
 
       // Apply search filter
@@ -665,7 +684,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Add event listeners for difficulty filter buttons
   difficultyFilters.forEach((button) => {
     button.addEventListener("click", () => {
-      const wasActive = button.classList.contains("active");
+      const nextDifficulty = getNextDifficultySelection(
+        currentDifficulty,
+        button.dataset.difficulty
+      );
 
       // Update active class
       difficultyFilters.forEach((btn) => {
@@ -673,8 +695,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.setAttribute("aria-pressed", "false");
       });
 
-      // Clicking an active difficulty button clears difficulty filtering
-      if (wasActive) {
+      if (!nextDifficulty) {
         currentDifficulty = null;
         displayFilteredActivities();
         return;
@@ -684,7 +705,7 @@ document.addEventListener("DOMContentLoaded", () => {
       button.setAttribute("aria-pressed", "true");
 
       // Update current difficulty and display filtered activities
-      currentDifficulty = button.dataset.difficulty;
+      currentDifficulty = nextDifficulty;
       displayFilteredActivities();
     });
   });
@@ -913,4 +934,12 @@ document.addEventListener("DOMContentLoaded", () => {
   checkAuthentication();
   initializeFilters();
   fetchActivities();
-});
+  });
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    matchesDifficultyFilter,
+    getNextDifficultySelection,
+  };
+}
