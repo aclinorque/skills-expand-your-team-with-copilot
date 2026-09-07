@@ -47,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Authentication state
   let currentUser = null;
   const themeStorageKey = "preferredTheme";
+  const prefersDarkThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
   // Time range mappings for the dropdown
   const timeRanges = {
@@ -189,11 +190,28 @@ document.addEventListener("DOMContentLoaded", () => {
     updateThemeToggleState();
   }
 
+  function getSavedTheme() {
+    try {
+      return localStorage.getItem(themeStorageKey);
+    } catch (error) {
+      console.warn("Unable to read saved theme preference.", error);
+      return null;
+    }
+  }
+
+  function saveTheme(theme) {
+    try {
+      localStorage.setItem(themeStorageKey, theme);
+      return true;
+    } catch (error) {
+      console.warn("Unable to save theme preference.", error);
+      return false;
+    }
+  }
+
   function initializeTheme() {
-    const savedTheme = localStorage.getItem(themeStorageKey);
-    const prefersDarkTheme = window.matchMedia("(prefers-color-scheme: dark)");
-    const initialTheme =
-      savedTheme || (prefersDarkTheme.matches ? "dark" : "light");
+    const savedTheme = getSavedTheme();
+    const initialTheme = savedTheme || (prefersDarkThemeQuery.matches ? "dark" : "light");
     applyTheme(initialTheme);
   }
 
@@ -201,8 +219,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const isDarkMode = document.body.classList.contains("dark-mode");
     const nextTheme = isDarkMode ? "light" : "dark";
     applyTheme(nextTheme);
-    localStorage.setItem(themeStorageKey, nextTheme);
+    saveTheme(nextTheme);
   });
+
+  const handleSystemThemeChange = (event) => {
+    if (!getSavedTheme()) {
+      applyTheme(event.matches ? "dark" : "light");
+    }
+  };
+
+  if (typeof prefersDarkThemeQuery.addEventListener === "function") {
+    prefersDarkThemeQuery.addEventListener("change", handleSystemThemeChange);
+  } else if (typeof prefersDarkThemeQuery.addListener === "function") {
+    prefersDarkThemeQuery.addListener(handleSystemThemeChange);
+  }
 
   // Login function
   async function login(username, password) {
