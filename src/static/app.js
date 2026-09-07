@@ -421,7 +421,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    searchQuery = matchingActivityName;
     searchInput.value = matchingActivityName;
   }
 
