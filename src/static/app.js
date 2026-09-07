@@ -37,8 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // State for activities and filters
   let allActivities = {};
   let currentFilter = "all";
-  let searchQuery =
-    new URLSearchParams(window.location.search).get("activity") || "";
+  let searchQuery = "";
   let currentDay = "";
   let currentTimeRange = "";
 
@@ -306,7 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function buildActivityShareUrl(activityName) {
-    const shareUrl = new URL(window.location.pathname, window.location.origin);
+    const shareUrl = new URL(window.location.href);
     shareUrl.searchParams.set("activity", activityName);
     return shareUrl.toString();
   }
@@ -368,6 +367,23 @@ document.addEventListener("DOMContentLoaded", () => {
       "_blank",
       "noopener,noreferrer"
     );
+  }
+
+  function updateSearchQuery(value) {
+    searchQuery = value;
+    displayFilteredActivities();
+  }
+
+  function initializeSharedActivityFilter() {
+    const sharedActivity =
+      new URLSearchParams(window.location.search).get("activity") || "";
+
+    if (!sharedActivity) {
+      return;
+    }
+
+    searchInput.value = sharedActivity;
+    updateSearchQuery(sharedActivity);
   }
 
   // Function to determine activity type (this would ideally come from backend)
@@ -619,14 +635,24 @@ document.addEventListener("DOMContentLoaded", () => {
         </ul>
       </div>
       <div class="share-actions">
-        <button type="button" class="share-button share-button-primary">
+        <button
+          type="button"
+          class="share-button share-button-primary"
+          data-share-action="native"
+        >
           Share
         </button>
-        <button type="button" class="share-button">
+        <button type="button" class="share-button" data-share-action="copy">
           Copy Link
         </button>
-        <button type="button" class="share-button">
-          WhatsApp
+        <button
+          type="button"
+          class="share-button"
+          data-share-action="whatsapp"
+          aria-label="Share on WhatsApp (opens in a new tab)"
+          title="Share on WhatsApp (opens in a new tab)"
+        >
+          WhatsApp ↗
         </button>
       </div>
       <div class="activity-card-actions">
@@ -648,8 +674,15 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
 
-    const [shareButton, copyLinkButton, whatsappButton] =
-    activityCard.querySelectorAll(".share-button");
+    const shareButton = activityCard.querySelector(
+    '[data-share-action="native"]'
+    );
+    const copyLinkButton = activityCard.querySelector(
+    '[data-share-action="copy"]'
+    );
+    const whatsappButton = activityCard.querySelector(
+    '[data-share-action="whatsapp"]'
+    );
 
     shareButton.addEventListener("click", async () => {
     try {
@@ -694,14 +727,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Event listeners for search and filter
   searchInput.addEventListener("input", (event) => {
-    searchQuery = event.target.value;
-    displayFilteredActivities();
+    updateSearchQuery(event.target.value);
   });
 
   searchButton.addEventListener("click", (event) => {
     event.preventDefault();
-    searchQuery = searchInput.value;
-    displayFilteredActivities();
+    updateSearchQuery(searchInput.value);
   });
 
   // Add event listeners to category filter buttons
@@ -964,7 +995,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Initialize app
-  searchInput.value = searchQuery;
+  initializeSharedActivityFilter();
   checkAuthentication();
   initializeFilters();
   fetchActivities();
