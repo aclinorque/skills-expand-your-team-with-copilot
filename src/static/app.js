@@ -664,8 +664,12 @@ document.addEventListener("DOMContentLoaded", () => {
   difficultyFilters.forEach((button) => {
     button.addEventListener("click", () => {
       // Update active class
-      difficultyFilters.forEach((btn) => btn.classList.remove("active"));
+      difficultyFilters.forEach((btn) => {
+        btn.classList.remove("active");
+        btn.setAttribute("aria-checked", "false");
+      });
       button.classList.add("active");
+      button.setAttribute("aria-checked", "true");
 
       // Update current difficulty and display filtered activities
       currentDifficulty = button.dataset.difficulty;
