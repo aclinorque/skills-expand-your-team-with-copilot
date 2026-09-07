@@ -41,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let allActivities = {};
   let currentFilter = "all";
   let searchQuery = "";
+  let sharedActivityId = "";
   let currentDay = "";
   let currentTimeRange = "";
 
@@ -411,6 +412,152 @@ document.addEventListener("DOMContentLoaded", () => {
     return details.schedule;
   }
 
+  function buildActivityIdentityValue(activityName, details) {
+    const scheduleValue = details.schedule_details
+      ? [
+          details.schedule_details.days.join("-"),
+          details.schedule_details.start_time,
+          details.schedule_details.end_time,
+        ].join("|")
+      : details.schedule || "";
+
+    return `${normalizeActivityValue(activityName)}|${normalizeActivityValue(
+      scheduleValue
+    )}`;
+  }
+
+  function buildActivityShareUrl(activityName, details) {
+    const shareUrl = new URL(window.location.pathname, window.location.origin);
+    shareUrl.searchParams.set(
+      "activity",
+      buildActivityShareId(activityName, details)
+    );
+    return shareUrl.toString();
+  }
+
+  function buildActivityShareText(activityName, details) {
+    return `Check out ${activityName} at Mergington High School. ${details.description} Schedule: ${formatSchedule(details)}.`;
+  }
+
+  function normalizeActivityValue(value) {
+    return value.trim().toLowerCase().replace(/\s+/g, " ");
+  }
+
+  function hashActivityValue(value) {
+    let hash = 0;
+
+    for (const character of value) {
+      hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+    }
+
+    return hash.toString(36);
+  }
+
+  function buildActivityShareId(activityName, details) {
+    const normalizedName = normalizeActivityValue(activityName);
+    const slug =
+      normalizedName.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ||
+      "activity";
+
+    return `${slug}-${hashActivityValue(
+      buildActivityIdentityValue(activityName, details)
+    )}`;
+  }
+
+  async function copyTextToClipboard(text) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const fallbackTextArea = document.createElement("textarea");
+    fallbackTextArea.value = text;
+    fallbackTextArea.setAttribute("readonly", "");
+    fallbackTextArea.style.position = "absolute";
+    fallbackTextArea.style.left = "-9999px";
+    document.body.appendChild(fallbackTextArea);
+    fallbackTextArea.select();
+    document.execCommand("copy");
+    document.body.removeChild(fallbackTextArea);
+  }
+
+  async function shareActivity(activityName, details) {
+    const shareUrl = buildActivityShareUrl(activityName, details);
+    const shareData = {
+      title: `${activityName} | Mergington High School`,
+      text: buildActivityShareText(activityName, details),
+      url: shareUrl,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (error) {
+        if (error.name === "AbortError") {
+          return;
+        }
+        console.error("Native sharing failed:", error);
+      }
+    }
+
+    await copyTextToClipboard(shareUrl);
+    showMessage(`Share link copied for ${activityName}.`, "success");
+  }
+
+  async function copyActivityLink(activityName, details) {
+    await copyTextToClipboard(buildActivityShareUrl(activityName, details));
+    showMessage(`Activity link copied for ${activityName}.`, "success");
+  }
+
+  function shareActivityOnWhatsApp(activityName, details) {
+    const shareMessage = `${buildActivityShareText(activityName, details)} ${buildActivityShareUrl(activityName, details)}`;
+    const whatsappWindow = window.open(
+      `https://wa.me/?text=${encodeURIComponent(shareMessage)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+
+    if (!whatsappWindow) {
+      showMessage("Unable to open WhatsApp sharing in a new tab.", "error");
+    }
+  }
+
+  function updateSearchQuery(value) {
+    searchQuery = value;
+    sharedActivityId = "";
+    displayFilteredActivities();
+  }
+
+  function initializeSharedActivityFilter() {
+    sharedActivityId =
+      new URLSearchParams(window.location.search).get("activity") || "";
+  }
+
+  function applySharedActivitySelection() {
+    if (!sharedActivityId) {
+      return;
+    }
+
+    const matchingActivityName = Object.keys(allActivities).find(
+      (activityName) =>
+        buildActivityShareId(activityName, allActivities[activityName]) ===
+        sharedActivityId
+    );
+
+    if (!matchingActivityName) {
+      sharedActivityId = "";
+      searchInput.value = "";
+      showMessage(
+        "That shared activity could not be found, so all activities are shown.",
+        "info"
+      );
+      return;
+    }
+
+    searchInput.value = matchingActivityName;
+  }
+
   // Function to determine activity type (this would ideally come from backend)
   function getActivityType(activityName, description) {
     const name = activityName.toLowerCase();
@@ -506,6 +653,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Save the activities data
       allActivities = activities;
+      applySharedActivitySelection();
 
       // Apply search and filter, and handle weekend filter in client
       displayFilteredActivities();
@@ -525,6 +673,13 @@ document.addEventListener("DOMContentLoaded", () => {
     let filteredActivities = {};
 
     Object.entries(allActivities).forEach(([name, details]) => {
+      if (
+        sharedActivityId &&
+        buildActivityShareId(name, details) !== sharedActivityId
+      ) {
+        return;
+      }
+
       const activityType = getActivityType(name, details.description);
 
       // Apply category filter
@@ -659,6 +814,27 @@ document.addEventListener("DOMContentLoaded", () => {
             .join("")}
         </ul>
       </div>
+      <div class="share-actions">
+        <button
+          type="button"
+          class="share-button share-button-primary"
+          data-share-action="native"
+        >
+          Share
+        </button>
+        <button type="button" class="share-button" data-share-action="copy">
+          Copy Link
+        </button>
+        <button
+          type="button"
+          class="share-button"
+          data-share-action="whatsapp"
+          aria-label="Share on WhatsApp (opens in a new tab)"
+          title="Share on WhatsApp (opens in a new tab)"
+        >
+          WhatsApp ↗
+        </button>
+      </div>
       <div class="activity-card-actions">
         ${
           currentUser
@@ -677,6 +853,38 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       </div>
     `;
+
+    const shareButton = activityCard.querySelector(
+    '[data-share-action="native"]'
+    );
+    const copyLinkButton = activityCard.querySelector(
+    '[data-share-action="copy"]'
+    );
+    const whatsappButton = activityCard.querySelector(
+    '[data-share-action="whatsapp"]'
+    );
+
+    shareButton.addEventListener("click", async () => {
+    try {
+      await shareActivity(name, details);
+    } catch (error) {
+      console.error("Error sharing activity:", error);
+      showMessage("Unable to share this activity right now.", "error");
+    }
+    });
+
+    copyLinkButton.addEventListener("click", async () => {
+    try {
+      await copyActivityLink(name, details);
+    } catch (error) {
+      console.error("Error copying activity link:", error);
+      showMessage("Unable to copy the activity link right now.", "error");
+    }
+    });
+
+    whatsappButton.addEventListener("click", () => {
+    shareActivityOnWhatsApp(name, details);
+    });
 
     // Add click handlers for delete buttons
     const deleteButtons = activityCard.querySelectorAll(".delete-participant");
@@ -699,14 +907,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Event listeners for search and filter
   searchInput.addEventListener("input", (event) => {
-    searchQuery = event.target.value;
-    displayFilteredActivities();
+    updateSearchQuery(event.target.value);
   });
 
   searchButton.addEventListener("click", (event) => {
     event.preventDefault();
-    searchQuery = searchInput.value;
-    displayFilteredActivities();
+    updateSearchQuery(searchInput.value);
   });
 
   // Add event listeners to category filter buttons
@@ -970,6 +1176,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize app
   initializeTheme();
+  initializeSharedActivityFilter();
   checkAuthentication();
   initializeFilters();
   fetchActivities();

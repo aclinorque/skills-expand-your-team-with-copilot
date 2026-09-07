@@ -212,6 +212,47 @@ section h3 {
   justify-content: center;
 }
 
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.share-button {
+  flex: 1 1 90px;
+  background-color: var(--background);
+  color: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.share-button:hover {
+  background-color: var(--border-light);
+}
+
+.share-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.share-button-primary {
+  background-color: var(--primary);
+  color: var(--primary-text);
+  border-color: var(--primary);
+}
+
+.share-button-primary:hover {
+  background-color: var(--primary-light);
+}
+
+.share-button-primary:focus-visible {
+  outline-color: var(--secondary);
+}
+
 /* Activity Tag */
 .activity-tag {
   position: absolute;
@@ -307,6 +348,12 @@ section h3 {
   letter-spacing: 0.3px;
   text-transform: uppercase;
   border: none;
+}
+
+.register-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none;
 }
 
 button {
