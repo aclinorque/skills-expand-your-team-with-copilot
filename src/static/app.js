@@ -174,6 +174,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const isDarkMode = document.body.classList.contains("dark-mode");
     themeToggleIcon.textContent = isDarkMode ? "☀️" : "🌙";
     themeToggleText.textContent = isDarkMode ? "Light Mode" : "Dark Mode";
+    themeToggle.setAttribute(
+      "aria-label",
+      isDarkMode ? "Switch to light mode" : "Switch to dark mode"
+    );
   }
 
   function applyTheme(theme) {
