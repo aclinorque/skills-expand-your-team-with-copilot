@@ -212,8 +212,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function clearSavedTheme() {
+    try {
+      localStorage.removeItem(themeStorageKey);
+      return true;
+    } catch (error) {
+      console.warn("Unable to clear theme preference.", error);
+      return false;
+    }
+  }
+
   function initializeTheme() {
-    const savedTheme = getSavedTheme();
+    let savedTheme = getSavedTheme();
+    const systemTheme = prefersDarkThemeQuery.matches ? "dark" : "light";
+    if (savedTheme === systemTheme) {
+      clearSavedTheme();
+      savedTheme = null;
+    }
     const initialTheme = savedTheme || (prefersDarkThemeQuery.matches ? "dark" : "light");
     applyTheme(initialTheme);
   }
@@ -223,7 +238,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const isDarkMode = document.body.classList.contains("dark-mode");
       const nextTheme = isDarkMode ? "light" : "dark";
       applyTheme(nextTheme);
-      saveTheme(nextTheme);
+      const systemTheme = prefersDarkThemeQuery.matches ? "dark" : "light";
+      if (nextTheme === systemTheme) {
+        clearSavedTheme();
+      } else {
+        saveTheme(nextTheme);
+      }
     });
 
     const handleSystemThemeChange = (event) => {
