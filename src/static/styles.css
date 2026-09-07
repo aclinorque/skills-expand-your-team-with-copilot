@@ -32,6 +32,28 @@
   --info-light: #d1ecf1;
 }
 
+body.dark-mode {
+  --primary: #0d1321;
+  --primary-light: #1d2d44;
+  --primary-dark: #070b14;
+  --primary-text: #e6edf3;
+  --secondary: #f4a261;
+  --secondary-light: #f7b987;
+  --secondary-dark: #c97a2f;
+  --secondary-text: #111111;
+  --background: #0b111a;
+  --surface: #111827;
+  --text-primary: #e6edf3;
+  --text-secondary: #9ca3af;
+  --border: #374151;
+  --border-light: #1f2937;
+  --border-focus: #4b5563;
+  --success-light: #113d1f;
+  --warning-light: #4b3300;
+  --error-light: #4f1d24;
+  --info-light: #12303a;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -617,6 +639,9 @@ footer {
   position: absolute;
   top: 10px;
   right: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 #user-status {
