@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let searchQuery = "";
   let currentDay = "";
   let currentTimeRange = "";
-  let currentDifficulty = "";
+  let currentDifficulty = null;
 
   // Authentication state
   let currentUser = null;
@@ -448,12 +448,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Apply difficulty filter
-      if (currentDifficulty) {
+      if (currentDifficulty === "unspecified") {
+        if (details.difficulty) {
+          return;
+        }
+      } else if (currentDifficulty) {
         if (details.difficulty !== currentDifficulty) {
           return;
         }
-      } else if (details.difficulty) {
-        return;
       }
 
       // Apply search filter
@@ -663,13 +665,23 @@ document.addEventListener("DOMContentLoaded", () => {
   // Add event listeners for difficulty filter buttons
   difficultyFilters.forEach((button) => {
     button.addEventListener("click", () => {
+      const wasActive = button.classList.contains("active");
+
       // Update active class
       difficultyFilters.forEach((btn) => {
         btn.classList.remove("active");
-        btn.setAttribute("aria-checked", "false");
+        btn.setAttribute("aria-pressed", "false");
       });
+
+      // Clicking an active difficulty button clears difficulty filtering
+      if (wasActive) {
+        currentDifficulty = null;
+        displayFilteredActivities();
+        return;
+      }
+
       button.classList.add("active");
-      button.setAttribute("aria-checked", "true");
+      button.setAttribute("aria-pressed", "true");
 
       // Update current difficulty and display filtered activities
       currentDifficulty = button.dataset.difficulty;
