@@ -172,6 +172,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateThemeToggleState() {
+    if (!themeToggle || !themeToggleIcon || !themeToggleText) {
+      return;
+    }
     const isDarkMode = document.body.classList.contains("dark-mode");
     themeToggleIcon.textContent = isDarkMode ? "☀️" : "🌙";
     themeToggleText.textContent = isDarkMode ? "Light Mode" : "Dark Mode";
@@ -215,23 +218,25 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTheme(initialTheme);
   }
 
-  themeToggle.addEventListener("click", () => {
-    const isDarkMode = document.body.classList.contains("dark-mode");
-    const nextTheme = isDarkMode ? "light" : "dark";
-    applyTheme(nextTheme);
-    saveTheme(nextTheme);
-  });
+  if (themeToggle && themeToggleIcon && themeToggleText) {
+    themeToggle.addEventListener("click", () => {
+      const isDarkMode = document.body.classList.contains("dark-mode");
+      const nextTheme = isDarkMode ? "light" : "dark";
+      applyTheme(nextTheme);
+      saveTheme(nextTheme);
+    });
 
-  const handleSystemThemeChange = (event) => {
-    if (!getSavedTheme()) {
-      applyTheme(event.matches ? "dark" : "light");
+    const handleSystemThemeChange = (event) => {
+      if (!getSavedTheme()) {
+        applyTheme(event.matches ? "dark" : "light");
+      }
+    };
+
+    if (typeof prefersDarkThemeQuery.addEventListener === "function") {
+      prefersDarkThemeQuery.addEventListener("change", handleSystemThemeChange);
+    } else if (typeof prefersDarkThemeQuery.addListener === "function") {
+      prefersDarkThemeQuery.addListener(handleSystemThemeChange);
     }
-  };
-
-  if (typeof prefersDarkThemeQuery.addEventListener === "function") {
-    prefersDarkThemeQuery.addEventListener("change", handleSystemThemeChange);
-  } else if (typeof prefersDarkThemeQuery.addListener === "function") {
-    prefersDarkThemeQuery.addListener(handleSystemThemeChange);
   }
 
   // Login function
