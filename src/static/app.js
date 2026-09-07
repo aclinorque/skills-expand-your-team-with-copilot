@@ -305,9 +305,26 @@ document.addEventListener("DOMContentLoaded", () => {
     return details.schedule;
   }
 
-  function buildActivityShareUrl(activityName) {
+  function buildActivityIdentityValue(activityName, details) {
+    const scheduleValue = details.schedule_details
+      ? [
+          details.schedule_details.days.join("-"),
+          details.schedule_details.start_time,
+          details.schedule_details.end_time,
+        ].join("|")
+      : details.schedule || "";
+
+    return `${normalizeActivityValue(activityName)}|${normalizeActivityValue(
+      scheduleValue
+    )}`;
+  }
+
+  function buildActivityShareUrl(activityName, details) {
     const shareUrl = new URL(window.location.pathname, window.location.origin);
-    shareUrl.searchParams.set("activity", buildActivityShareId(activityName));
+    shareUrl.searchParams.set(
+      "activity",
+      buildActivityShareId(activityName, details)
+    );
     return shareUrl.toString();
   }
 
@@ -329,13 +346,15 @@ document.addEventListener("DOMContentLoaded", () => {
     return hash.toString(36);
   }
 
-  function buildActivityShareId(activityName) {
+  function buildActivityShareId(activityName, details) {
     const normalizedName = normalizeActivityValue(activityName);
     const slug =
       normalizedName.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ||
       "activity";
 
-    return `${slug}-${hashActivityValue(normalizedName)}`;
+    return `${slug}-${hashActivityValue(
+      buildActivityIdentityValue(activityName, details)
+    )}`;
   }
 
   async function copyTextToClipboard(text) {
@@ -356,7 +375,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function shareActivity(activityName, details) {
-    const shareUrl = buildActivityShareUrl(activityName);
+    const shareUrl = buildActivityShareUrl(activityName, details);
     const shareData = {
       title: `${activityName} | Mergington High School`,
       text: buildActivityShareText(activityName, details),
@@ -379,13 +398,13 @@ document.addEventListener("DOMContentLoaded", () => {
     showMessage(`Share link copied for ${activityName}.`, "success");
   }
 
-  async function copyActivityLink(activityName) {
-    await copyTextToClipboard(buildActivityShareUrl(activityName));
+  async function copyActivityLink(activityName, details) {
+    await copyTextToClipboard(buildActivityShareUrl(activityName, details));
     showMessage(`Activity link copied for ${activityName}.`, "success");
   }
 
   function shareActivityOnWhatsApp(activityName, details) {
-    const shareMessage = `${buildActivityShareText(activityName, details)} ${buildActivityShareUrl(activityName)}`;
+    const shareMessage = `${buildActivityShareText(activityName, details)} ${buildActivityShareUrl(activityName, details)}`;
     const whatsappWindow = window.open(
       `https://wa.me/?text=${encodeURIComponent(shareMessage)}`,
       "_blank",
@@ -414,10 +433,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const matchingActivityName = Object.keys(allActivities).find(
-      (activityName) => buildActivityShareId(activityName) === sharedActivityId
+      (activityName) =>
+        buildActivityShareId(activityName, allActivities[activityName]) ===
+        sharedActivityId
     );
 
     if (!matchingActivityName) {
+      sharedActivityId = "";
+      searchInput.value = "";
+      showMessage(
+        "That shared activity could not be found, so all activities are shown.",
+        "info"
+      );
       return;
     }
 
@@ -541,7 +568,7 @@ document.addEventListener("DOMContentLoaded", () => {
     Object.entries(allActivities).forEach(([name, details]) => {
       if (
         sharedActivityId &&
-        buildActivityShareId(name) !== sharedActivityId
+        buildActivityShareId(name, details) !== sharedActivityId
       ) {
         return;
       }
@@ -741,7 +768,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     copyLinkButton.addEventListener("click", async () => {
     try {
-      await copyActivityLink(name);
+      await copyActivityLink(name, details);
     } catch (error) {
       console.error("Error copying activity link:", error);
       showMessage("Unable to copy the activity link right now.", "error");
