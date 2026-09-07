@@ -11,7 +11,7 @@ test("matchesDifficultyFilter applies level and unspecified rules", () => {
   assert.equal(matchesDifficultyFilter({ difficulty: "Intermediate" }, "Beginner"), false);
   assert.equal(matchesDifficultyFilter({ description: "No difficulty" }, "unspecified"), true);
   assert.equal(matchesDifficultyFilter({ difficulty: "Advanced" }, "unspecified"), false);
-  assert.equal(matchesDifficultyFilter({ difficulty: "" }, "unspecified"), false);
+  assert.equal(matchesDifficultyFilter({ difficulty: "" }, "unspecified"), true);
   assert.equal(matchesDifficultyFilter({ difficulty: "Advanced" }, null), true);
 });
 

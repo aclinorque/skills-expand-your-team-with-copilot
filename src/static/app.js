@@ -1,10 +1,18 @@
-function hasDifficultyField(details) {
-  return Object.prototype.hasOwnProperty.call(details, "difficulty");
+function hasSpecifiedDifficulty(details) {
+  if (!Object.prototype.hasOwnProperty.call(details, "difficulty")) {
+    return false;
+  }
+
+  if (typeof details.difficulty !== "string") {
+    return Boolean(details.difficulty);
+  }
+
+  return details.difficulty.trim() !== "";
 }
 
 function matchesDifficultyFilter(details, selectedDifficulty) {
   if (selectedDifficulty === "unspecified") {
-    return !hasDifficultyField(details);
+    return !hasSpecifiedDifficulty(details);
   }
 
   if (selectedDifficulty) {
